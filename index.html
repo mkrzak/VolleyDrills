@@ -62,6 +62,8 @@ main .in{padding-block:22px 48px;display:grid;gap:18px}
 .rule b{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;margin-right:6px}
 .chips{list-style:none;padding:0!important;margin:12px 0 0!important;display:flex;flex-wrap:wrap;gap:6px}
 .chips li{margin:0;font:600 14px var(--body);padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.lv{display:inline-block;font:700 11px var(--body);letter-spacing:.8px;padding:1px 7px;border-radius:999px;margin-left:4px;vertical-align:1px;color:#fff}
+.lv1{background:#2a9d6f}.lv2{background:#2f6f8f}.lv3{background:#9b2c2c}
 .plab{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--muted);align-self:center;margin-right:4px}
 .players{margin-top:12px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--free) 10%,transparent);font-size:15px}
 .players>b{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-right:6px}
@@ -82,7 +84,7 @@ svg text{font-family:var(--body);font-weight:700}
 
 <div class="band"><div class="in">
   <h1><a href="#">Volleyball drill cards</a></h1>
-  <p>Drills for the county teams. Pick a card to open the drill with its animated court diagram.</p>
+  <p>Drills for the county teams. Every court shows its drill in motion. Pick a card for the full drill.</p>
 </div></div>
 
 <main><div class="in" id="app"></div></main>
@@ -366,9 +368,9 @@ function anim(R){
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const tween=(items,dur)=>new Promise(res=>{const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
     if(!pe0(items))return res();items.forEach(([pe,n])=>{const p=pe.getPointAtLength(pe.getTotalLength()*e);n.setAttribute("transform",`translate(${p.x} ${p.y})`)});k<1?requestAnimationFrame(f):res()})(t0)});
-  async function play(){const my=++RUN;
-    while(my===RUN&&document.body.contains(svg)){
-      for(const step of R.seq){if(my!==RUN)break;
+  let run=0;async function play(){const my=++run;
+    while(my===run&&document.body.contains(svg)){
+      for(const step of R.seq){if(my!==run)break;
         const items=step.map(c=>{const i=+c.slice(1);return c[0]==="b"?[R.b[i],ball]:[R.m[i],movers[i]]});
         all.forEach(e=>e.style.opacity=.3);items.forEach(([pe,n])=>{pe.style.opacity=1;n.setAttribute("opacity",1)});
         ball.setAttribute("opacity",items.some(([,n])=>n===ball)?1:0);
@@ -379,7 +381,7 @@ function anim(R){
   svg.addEventListener("click",play);play();
 }
 
-const app=document.getElementById("app");let filter="Setting",players=0;
+const app=document.getElementById("app");let filter="Setting",players=0,level=0;
 const legend=`<div class="legend" aria-label="Diagram key">
 <span><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="var(--setter)" stroke="var(--ink)" stroke-width="1.5"/></svg>Setter</span>
 <span><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="var(--libero)" stroke="var(--line)" stroke-width="1.5"/></svg>Libero (Li)</span>
@@ -391,22 +393,23 @@ const legend=`<div class="legend" aria-label="Diagram key">
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function index(){
   RUN++;
-  const list=D.filter(d=>d.t===filter&&d.min<=(players||99));
+  const list=D.filter(d=>d.t===filter&&d.min<=(players||99)&&(!level||d.lv===level));
   app.innerHTML=`<div class="filters" role="group" aria-label="Filter by topic">${TOPICS.map(t=>`<button type="button" aria-pressed="${t===filter}">${t}</button>`).join("")}</div>
   <div class="filters" role="group" aria-label="Players available"><span class="plab">Players today</span>${SIZES.map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===players}">${n?(n===12?"12+":n):"Any"}</button>`).join("")}</div>
+  <div class="filters" role="group" aria-label="Level"><span class="plab">Level</span>${[0,1,2,3].map(n=>`<button type="button" data-l="${n}" aria-pressed="${n===level}">${n?LVN[n]:"Any"}</button>`).join("")}</div>
   <div class="count">${list.length} drill${list.length===1?"":"s"}${players?` you can run with ${players===12?"12 or more":players} players`:""}</div>
   <div class="grid">${list.map(d=>`<a class="card" href="#${d.id}"><div class="thumb"><svg data-id="${d.id}" aria-hidden="true"></svg></div>
-    <div class="cbody"><span class="tag">${d.t}</span><h2>${esc(d.title)}</h2><p>${esc(d.aim)}</p><div class="foot">${d.time} · ${d.min}+ players</div></div></a>`).join("")}</div>
+    <div class="cbody"><span class="tag">${d.t} <span class="lv lv${d.lv}">${LVN[d.lv]}</span></span><h2>${esc(d.title)}</h2><p>${esc(d.aim)}</p><div class="foot">${d.time} · ${d.min}+ players</div></div></a>`).join("")}</div>
   <footer>Compiled by Monika Krzak for the Cambridge Volleyball Club county teams. More training materials on <a href="https://mkrzak.github.io/VolleySource/">VolleySource</a>.</footer>`;
-  app.querySelectorAll(".filters button").forEach(b=>b.onclick=()=>{if(b.dataset.n!==undefined)players=+b.dataset.n;else filter=b.textContent;index()});
-  app.querySelectorAll(".thumb svg").forEach(s=>draw(s,D.find(d=>d.id===s.dataset.id).s,true));
+  app.querySelectorAll(".filters button").forEach(b=>b.onclick=()=>{if(b.dataset.n!==undefined)players=+b.dataset.n;else if(b.dataset.l!==undefined)level=+b.dataset.l;else filter=b.textContent;index()});
+  app.querySelectorAll(".thumb svg").forEach((s,i)=>{const R=draw(s,D.find(d=>d.id===s.dataset.id).s,true);setTimeout(()=>anim(R),i*350)});
 }
 function detail(d){
   filter=d.t;
   const i=D.indexOf(d),prev=D[(i-1+D.length)%D.length],next=D[(i+1)%D.length];
   app.innerHTML=`<a class="back" href="#">← All drills</a>
   <article class="detail"><div><svg class="court" role="img" aria-label="${esc(d.title)} diagram"></svg><div class="hint">Tap the court to replay</div></div>
-  <div><div class="meta">${d.t} · ${d.time} · ${esc(d.who)}</div><h2>${esc(d.title)}</h2><p class="aim">${esc(d.aim)}</p>
+  <div><div class="meta">${d.t} · <span class="lv lv${d.lv}">${LVN[d.lv]}</span> · ${d.time} · ${esc(d.who)}</div><h2>${esc(d.title)}</h2><p class="aim">${esc(d.aim)}</p>
   <ol>${d.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
   ${d.rule?`<p class="rule"><b>Rule</b>${esc(d.rule)}</p>`:""}
   <p class="line"><b>Score</b> ${esc(d.score)}</p>
@@ -418,8 +421,11 @@ function detail(d){
   anim(draw(app.querySelector("svg.court"),d.s,false));
 }
 function route(){const h=location.hash.slice(1),d=D.find(x=>x.id===h);d?detail(d):index();window.scrollTo(0,0)}
-addEventListener("hashchange",route);route();
+addEventListener("hashchange",route);
+addEventListener("DOMContentLoaded",()=>{D.sort((a,b)=>TOPICS.indexOf(a.t)-TOPICS.indexOf(b.t)||(a.lv||2)-(b.lv||2));route()});
 </script>
+<script src="more.js"></script>
+<script src="more2.js"></script>
 
 </body>
 </html>
