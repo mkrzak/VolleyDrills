@@ -7,233 +7,327 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
-/* Layout: a deck of drill cards — court diagram on top, setup and cues below; topic chips jump to each card */
-body{margin:0}
+/* Layout: a library of drill cards; each card opens its own drill page with an animated court */
 :root{
   --bg:#eef2f4; --paper:#ffffff; --fg:#1d2733; --muted:#5a6878; --rule:#d5dde4;
   --free:#2f6f8f; --court:#e8894a; --opp:#d97a3f; --line:#ffffff;
-  --setter:#f3c623; --player:#1f3a5c; --rival:#9b2c2c; --coach:#ffffff; --ink:#1d2733;
+  --setter:#f3c623; --player:#1f3a5c; --libero:#2a9d6f; --rival:#9b2c2c; --coach:#ffffff; --ink:#1d2733;
   --move:#14324f; --ball:#1d2733; --hoop:#ffffff; --accent:#c4571c; --zone:rgba(255,255,255,.22);
+  --head:#16283c;
   --display:"Barlow Condensed","Arial Narrow",sans-serif; --body:"Source Sans 3",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121821; --paper:#1a222d; --fg:#e7edf2; --muted:#9aa8b6; --rule:#2c3744;
-  --free:#1f4d64; --court:#b8652f; --opp:#a35a2a; --line:#f3efe9; --player:#0f2540; --rival:#7d2222;
-  --move:#0b1a2b; --ball:#0b1a2b; --accent:#f0a06a; --zone:rgba(255,255,255,.16); color-scheme:dark}}
+  --free:#1f4d64; --court:#b8652f; --opp:#a35a2a; --line:#f3efe9; --player:#0f2540; --libero:#1f7d58; --rival:#7d2222;
+  --move:#0b1a2b; --ball:#0b1a2b; --accent:#f0a06a; --zone:rgba(255,255,255,.16); --head:#0c1622; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121821; --paper:#1a222d; --fg:#e7edf2; --muted:#9aa8b6; --rule:#2c3744;
-  --free:#1f4d64; --court:#b8652f; --opp:#a35a2a; --line:#f3efe9; --player:#0f2540; --rival:#7d2222;
-  --move:#0b1a2b; --ball:#0b1a2b; --accent:#f0a06a; --zone:rgba(255,255,255,.16); color-scheme:dark}
+  --free:#1f4d64; --court:#b8652f; --opp:#a35a2a; --line:#f3efe9; --player:#0f2540; --libero:#1f7d58; --rival:#7d2222;
+  --move:#0b1a2b; --ball:#0b1a2b; --accent:#f0a06a; --zone:rgba(255,255,255,.16); --head:#0c1622; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font:16.5px/1.5 var(--body);
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 48px}
-.wrap{max-width:1120px;margin:0 auto;display:grid;gap:22px}
-header h1{font:700 clamp(40px,7vw,64px)/1 var(--display);letter-spacing:.5px;margin:0;text-transform:uppercase;text-wrap:balance}
-header p{margin:8px 0 0;color:var(--muted);max-width:64ch}
-nav{display:flex;flex-wrap:wrap;gap:8px}
-nav a{font:600 15px var(--body);color:var(--fg);text-decoration:none;border:1px solid var(--rule);background:var(--paper);padding:6px 14px;border-radius:999px}
-nav a:hover,nav a:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
-.legend{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:15px;color:var(--muted);background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:12px 16px}
-.legend span{display:inline-flex;align-items:center;gap:8px}
-.legend svg{flex:none}
-.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
-@media (max-width:860px){.cards{grid-template-columns:1fr}}
-.card{background:var(--paper);border:1px solid var(--rule);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;scroll-margin-top:16px}
-.card svg.court{width:100%;height:auto;display:block}
-.body{padding:14px 18px 16px;display:grid;gap:2px;min-width:0}
+body{margin:0;background:var(--bg);color:var(--fg);font:16.5px/1.5 var(--body)}
+.band{background:var(--head);color:#fff;border-bottom:5px solid #f0a500}
+.in{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band .in{padding-block:26px 20px}
+h1{font:700 clamp(36px,6vw,56px)/1 var(--display);letter-spacing:.5px;margin:0;text-transform:uppercase}
+h1 a{color:inherit;text-decoration:none}
+.band p{margin:8px 0 0;color:#b9cde0;max-width:64ch}
+main .in{padding-block:22px 48px;display:grid;gap:18px}
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filters button{font:600 15px var(--body);color:var(--fg);border:1px solid var(--rule);background:var(--paper);padding:6px 14px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--fg);color:var(--paper);border-color:var(--fg)}
+.filters button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{color:var(--muted);font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:12px;overflow:hidden;color:inherit;text-decoration:none;display:flex;flex-direction:column;transition:transform .2s ease,box-shadow .2s ease}
+.card:hover{transform:translateY(-3px);box-shadow:0 12px 26px -16px rgba(20,40,60,.5)}
+.thumb{aspect-ratio:10/8;background:var(--free);overflow:hidden}
+.thumb svg{width:100%;height:100%;display:block}
+.cbody{padding:12px 14px 14px;display:grid;gap:4px;flex:1;align-content:start}
+.tag{justify-self:start;font:700 12px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
+.card h2{font:700 24px/1.05 var(--display);margin:0;text-transform:uppercase;text-wrap:balance}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.card .foot{margin-top:auto;padding-top:6px;font:600 13.5px var(--body);color:var(--muted)}
+.back{font:600 15px var(--body);color:var(--accent);text-decoration:none;justify-self:start}
+.detail{background:var(--paper);border:1px solid var(--rule);border-radius:14px;display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:26px;padding:20px}
+@media (max-width:820px){.detail{grid-template-columns:1fr}}
+.detail svg.court{width:100%;height:auto;display:block;border-radius:10px;cursor:pointer}
+.hint{font-size:13.5px;color:var(--muted);margin-top:6px;text-align:center}
+.detail h2{font:700 40px/1 var(--display);margin:4px 0 6px;text-transform:uppercase;text-wrap:balance}
 .meta{font:600 13px var(--body);letter-spacing:1.2px;text-transform:uppercase;color:var(--accent)}
-.card h2{font:700 30px/1.05 var(--display);margin:2px 0 4px;text-transform:uppercase;text-wrap:balance}
-.card .aim{color:var(--muted);margin:0 0 4px}
-.card h3{font:700 13.5px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:12px 0 2px}
-.card ol,.card ul{margin:0;padding-left:20px}
-.card li{margin:2px 0}
-.cues li::marker{content:"› ";color:var(--accent);font-weight:700}
-.line{margin:8px 0 0;font-size:15.5px}.line b{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-right:6px}
-.chips{list-style:none;padding:0!important;margin:10px 0 0!important;display:flex;flex-wrap:wrap;gap:6px}
-.chips li{margin:0;font:600 14px var(--body);padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--fg)}
-.next{border-top:1px solid var(--rule);padding-top:8px}
-.card{transition:transform .25s ease,box-shadow .25s ease}
-.card:hover{transform:translateY(-3px);box-shadow:0 10px 24px -14px rgba(20,40,60,.45)}
-@media (prefers-reduced-motion:reduce){.card,.card:hover{transition:none;transform:none}}
-.prog{margin-top:12px;padding:9px 12px;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent);font-size:15.5px}
+.aim{color:var(--muted);margin:0 0 6px}
+.detail ol{margin:0;padding-left:20px}.detail li{margin:3px 0}
+.line{margin:10px 0 0;font-size:15.5px}.line b{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.rule{margin:10px 0 0;font-size:15px;padding:8px 12px;border-left:3px solid var(--libero);background:color-mix(in srgb,var(--libero) 10%,transparent)}
+.rule b{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;margin-right:6px}
+.chips{list-style:none;padding:0!important;margin:12px 0 0!important;display:flex;flex-wrap:wrap;gap:6px}
+.chips li{margin:0;font:600 14px var(--body);padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.plab{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--muted);align-self:center;margin-right:4px}
+.players{margin-top:12px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--free) 10%,transparent);font-size:15px}
+.players>b{font:700 12.5px var(--body);letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.players p{margin:4px 0 0}.players span{font-weight:700;margin-right:4px}
+.next{border-top:1px solid var(--rule);padding-top:10px}
+.pager{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pager a{font:600 15px var(--body);color:var(--fg);text-decoration:none;border:1px solid var(--rule);background:var(--paper);padding:8px 14px;border-radius:10px;max-width:48%}
+.pager a:hover{border-color:var(--accent);color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+footer{color:var(--muted);font-size:15px}footer a{color:var(--accent)}
 svg text{font-family:var(--body);font-weight:700}
+@media (prefers-reduced-motion:reduce){.card,.card:hover{transition:none;transform:none}}
 </style>
 </head>
 <body>
 
 
-<div class="wrap">
-<header>
-  <h1>Volleyball drill cards</h1>
-  <p>Eight drills for county training. Diagrams play through each drill; hover or tap a court to replay.</p>
-</header>
+<div class="band"><div class="in">
+  <h1><a href="#">Volleyball drill cards</a></h1>
+  <p>Drills for the county teams. Pick a card to open the drill with its animated court diagram.</p>
+</div></div>
 
-<nav aria-label="Jump to a drill">
-  <a href="#setting">Setting</a><a href="#hitting">Hitting</a><a href="#blocking">Blocking</a><a href="#passing">Passing</a><a href="#oos">Out of system</a><a href="#free">Free ball</a><a href="#communication">Communication</a><a href="#pipe">Pipe</a>
-</nav>
+<main><div class="in" id="app"></div></main>
 
-<div class="legend" aria-label="Diagram key">
-  <span><svg width="22" height="22"><circle cx="11" cy="11" r="10" fill="var(--setter)" stroke="var(--ink)" stroke-width="1.5"/><text x="11" y="15.5" text-anchor="middle" font-size="12" fill="#1d2733">S</text></svg>Setter</span>
-  <span><svg width="22" height="22"><circle cx="11" cy="11" r="10" fill="var(--player)" stroke="var(--line)" stroke-width="1.5"/><text x="11" y="15.5" text-anchor="middle" font-size="12" fill="#fff">P</text></svg>Your players</span>
-  <span><svg width="22" height="22"><circle cx="11" cy="11" r="10" fill="var(--rival)" stroke="var(--line)" stroke-width="1.5"/><text x="11" y="15.5" text-anchor="middle" font-size="12" fill="#fff">X</text></svg>Other side</span>
-  <span><svg width="22" height="22"><rect x="1" y="1" width="20" height="20" rx="4" fill="var(--coach)" stroke="var(--ink)" stroke-width="1.5"/><text x="11" y="15.5" text-anchor="middle" font-size="12" fill="#1d2733">C</text></svg>Coach</span>
-  <span><svg width="22" height="22"><circle cx="11" cy="11" r="9" fill="none" stroke="var(--hoop)" stroke-width="3"/><circle cx="11" cy="11" r="9" fill="none" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 2"/></svg>Target</span>
-  <span><svg width="40" height="12"><line x1="2" y1="6" x2="38" y2="6" stroke="var(--ball)" stroke-width="2.5" stroke-dasharray="5 4"/></svg>Ball</span>
-  <span><svg width="40" height="12"><line x1="2" y1="6" x2="38" y2="6" stroke="var(--line)" stroke-width="3.5"/><line x1="2" y1="6" x2="38" y2="6" stroke="var(--move)" stroke-width="2"/></svg>Movement</span>
-</div>
-
-<div class="cards">
-<article class="card" id="setting">
-  <svg class="court" id="d-set" role="img" aria-label="Setting to zones diagram"></svg>
-  <div class="body">
-    <div class="meta">Setting · 20 min · setters, then live hitters</div>
-    <h2>Release and set to zones</h2>
-    <p class="aim">Same body shape, any target: 4, quick, back set or pipe.</p>
-    <ol><li>Setter starts in right-back, releases on the coach's slap.</li><li>Coach passes to the target and calls a zone.</li><li>Setter delivers to that hoop; 10 balls, then swap.</li></ol>
-    <p class="line"><b>Score</b> in or within 1 m of the hoop 1 · clean quick or pipe +1.</p>
-    <ul class="chips"><li>Go on the slap</li><li>Stop, then square to 4</li><li>Hands don't tell the block</li></ul>
-    <p class="line next"><b>Next</b> hitters swing at every set.</p>
-  </div>
-</article>
-<article class="card" id="hitting">
-  <svg class="court" id="d-hit" role="img" aria-label="Approach and hit to targets diagram"></svg>
-  <div class="body">
-    <div class="meta">Hitting · 20 min · setter + hitter line</div>
-    <h2>Approach and hit to targets</h2>
-    <p class="aim">Strong approach; line and cross on purpose.</p>
-    <ol><li>Hitters queue outside 4, ~4 m off the net.</li><li>Coach tosses, setter sets high to 4.</li><li>Coach calls “line” or “cross”; hit that zone.</li></ol>
-    <p class="line"><b>Score</b> called zone 1 · target 2 · 10 swings each.</p>
-    <ul class="chips"><li>L–R–L, last two fast</li><li>Elbow high, contact in front</li><li>Turn body or wrist to aim</li></ul>
-    <p class="line next"><b>Next</b> add one blocker; hitter picks the open shot.</p>
-  </div>
-</article>
-<article class="card" id="blocking">
-  <svg class="court" id="d-block" role="img" aria-label="Read, move, close the block diagram"></svg>
-  <div class="body">
-    <div class="meta">Blocking · 15 min · front row + coach on box</div>
-    <h2>Read, move, close the block</h2>
-    <p class="aim">Middle reads and closes beside the outside blocker.</p>
-    <ol><li>Coach on a box attacks from either side.</li><li>Right-side blocker sets the edge.</li><li>Middle closes with step–cross–step; both block.</li></ol>
-    <p class="line"><b>Score</b> touch 1 · stuff 2 · ball through a gap −1.</p>
-    <ul class="chips"><li>Setter → ball → hitter</li><li>No gap in the seam</li><li>Press hands over the net</li></ul>
-    <p class="line next"><b>Next</b> mix in tips; back row covers.</p>
-  </div>
-</article>
-<article class="card" id="passing">
-  <svg class="court" id="d-pass" role="img" aria-label="Three-person serve receive diagram"></svg>
-  <div class="body">
-    <div class="meta">Passing · 15–20 min · 3 passers + server</div>
-    <h2>Three-person serve receive</h2>
-    <p class="aim">Consistent passes to target under serve pressure.</p>
-    <ol><li>Passers in 5, 6 and 1; serve from the far side.</li><li>Pass to the target between 2 and 3.</li><li>Rate each pass 0–3; rotate after 10.</li></ol>
-    <p class="line"><b>Score</b> average 2.0+ over 10 serves (3 = all options, 0 = ace).</p>
-    <ul class="chips"><li>Feet first, then platform</li><li>Angle to target, no swing</li><li>Read the server's toss</li></ul>
-    <p class="line next"><b>Next</b> serve the seams and short zones.</p>
-  </div>
-</article>
-<article class="card" id="oos">
-  <svg class="court" id="d-oos" role="img" aria-label="Setter digs, someone else sets diagram"></svg>
-  <div class="body">
-    <div class="meta">Out of system · 15 min · 6 players</div>
-    <h2>Setter digs, someone else sets</h2>
-    <p class="aim">Turn a scramble into a real attack.</p>
-    <ol><li>Coach on a box hits at the setter in right-back.</li><li>Setter digs high to mid-court, calls “Help!”.</li><li>Right-front sets high to 4; hitter attacks.</li></ol>
-    <p class="line"><b>Score</b> wash — 2 attacks in a row wins a point, first to 5.</p>
-    <ul class="chips"><li>Dig high, to the middle</li><li>Square up or bump set</li><li>Hitter waits wide</li></ul>
-    <p class="line next"><b>Next</b> coach points late at who takes the second ball.</p>
-  </div>
-</article>
-<article class="card" id="free">
-  <svg class="court" id="d-free" role="img" aria-label="Free ball transition diagram"></svg>
-  <div class="body">
-    <div class="meta">Free ball · 15 min · 6 players</div>
-    <h2>Free ball transition</h2>
-    <p class="aim">Easy ball over → fast in-system attack.</p>
-    <ol><li>Front row at the net, setter in right-back.</li><li>Coach tosses an easy ball: first player calls “Free!”.</li><li>Front row drops to 3 m, setter releases, pass to target, attack.</li></ol>
-    <p class="line"><b>Score</b> in-system attack 1 · middle/combo kill 2 · missed call −1.</p>
-    <ul class="chips"><li>Off the net before it crosses</li><li>High pass to target</li><li>Hitters call sets early</li></ul>
-    <p class="line next"><b>Next</b> a second free ball straight after the attack.</p>
-  </div>
-</article>
-<article class="card" id="communication">
-  <svg class="court" id="d-comm" role="img" aria-label="Call the seam diagram"></svg>
-  <div class="body">
-    <div class="meta">Communication · 10–15 min · 2–3 passers + server</div>
-    <h2>Call the seam</h2>
-    <p class="aim">Early calls so seam balls never drop.</p>
-    <ol><li>Two passers ~3 m apart; server aims at the seam.</li><li>“Mine!” before the ball crosses the net; partner calls “You!”.</li><li>Setter calls the set; passer calls “Covering!”.</li></ol>
-    <p class="line"><b>Score</b> a late or missing call loses the point, even after a good pass.</p>
-    <ul class="chips"><li>Agree the seam rule first</li><li>Loud, once — first call stands</li><li>Face the passer, don't spectate</li></ul>
-    <p class="line next"><b>Next</b> 6v6 where every uncalled touch loses the rally.</p>
-  </div>
-</article>
-<article class="card" id="pipe">
-  <svg class="court" id="d-pipe" role="img" aria-label="Pipe with a quick decoy diagram"></svg>
-  <div class="body">
-    <div class="meta">Pipe · 15 min · setter, back row, middle</div>
-    <h2>Pipe with a quick decoy</h2>
-    <p class="aim">Back-row attack from 6 that holds the middle blocker.</p>
-    <ol><li>Coach tosses to the setter.</li><li>Middle runs a quick as a decoy.</li><li>Hitter from ~7 m takes off behind the 3 m line.</li></ol>
-    <p class="line"><b>Score</b> kill 2 · deep attack 1 · foot fault 0.</p>
-    <ul class="chips"><li>Start after the middle</li><li>Take off behind, land in front</li><li>Same hands for quick and pipe</li></ul>
-    <p class="line next"><b>Next</b> add a live middle blocker.</p>
-  </div>
-</article>
-</div>
-</div>
-
-
-<footer style="max-width:1120px;margin:28px auto 0;color:var(--muted);font-size:15px">Compiled by Monika Krzak for the Cambridge Volleyball Club county teams. More training materials on <a href="https://mkrzak.github.io/VolleySource/" style="color:var(--accent)">VolleySource</a>.</footer>
 <script>
-const NS="http://www.w3.org/2000/svg",U=34,OX=24;
+const TOPICS=["Setting","Hitting","Blocking","Passing","Out of system","Free ball","Communication","Pipe","Serving","Defence"];
+const LIBERO_RULE="If the libero sets with her hands in front of the 3 m line, that ball can't be attacked above the net. From behind the line, or with a bump set, it can.";
+const D=[
+{id:"set-zones",t:"Setting",title:"Release and set to zones",time:"20 min",who:"setters, then live hitters",aim:"Same body shape, any target: 4, quick, back set or pipe.",
+ steps:["Setter starts in right-back and releases on the coach's slap.","Coach passes to the target and calls a zone.","Setter delivers to that hoop. 10 balls, then swap."],
+ score:"in or within 1 m of the hoop 1 · clean quick or pipe +1.",cues:["Go on the slap","Stop, then square to 4","Hands don't tell the block"],next:"hitters swing at every set.",
+ s:{seq:[["m0"],["b0"],["b1"],["b0"],["b2"],["b0"],["b3"],["b0"],["b4"]],ghost:[[7.6,7.4]],
+  hoops:[{x:1,y:0.8,l:"4 · high"},{x:4.7,y:0.8,l:"3 · quick",dx:-8},{x:8.2,y:0.8,l:"2 · back"},{x:4.4,y:3.9,l:"pipe"}],
+  moves:[[7.6,7.4,6.3,1.3]],balls:[[4.5,7.6,6,1.2,0.12],[6.1,0.9,1.3,0.8,-0.3],[6.1,0.9,4.9,0.8,-0.5],[6.1,0.9,8.0,0.8,0.5],[6.1,0.9,4.6,3.6,-0.2]],
+  people:[{x:6.1,y:0.9,k:"S"},{x:4.5,y:7.8,k:"C",n:"slap, pass, call zone"}],notes:[{x:7.9,y:5.2,t:"release",a:"start"}]}},
+{id:"set-move",t:"Setting",title:"Toss, move, set to target",time:"15 min",who:"groups of 3",aim:"Get to the ball early and set from a balanced, square position.",
+ steps:["Tosser sends the ball to a new spot each time: short, deep, inside, off the net.","Setter moves, stops before the ball arrives and squares to 4.","Set into the hoop at 4. 8 balls, then rotate."],
+ score:"1 per ball into the hoop. 6 of 8 to rotate out.",cues:["Beat the ball to the spot","Right hip faces 4","Extend through the ball"],next:"second hoop at 2; tosser calls front or back mid-air.",
+ s:{seq:[["b0","m0"],["b1"]],ghost:[[3.3,1.6],[7.4,4.2],[4.3,5.2]],hoops:[{x:1,y:0.9,l:"pos 4 target"}],moves:[[6,0.9,5.4,2.5]],
+  balls:[[4.5,7.2,5.4,2.3,0.2],[5.4,2.5,1.2,1.0,-0.35]],people:[{x:4.5,y:7.4,k:"C",n:"tosser"},{x:6,y:0.9,k:"S"}],notes:[{x:6.1,y:2.1,t:"move & stop",a:"start"}]}},
+{id:"hit-targets",t:"Hitting",title:"Approach and hit to targets",time:"20 min",who:"setter + hitter line",aim:"Strong approach; line and cross on purpose.",
+ steps:["Hitters queue outside 4, about 4 m off the net.","Coach tosses, setter sets high to 4.","Coach calls “line” or “cross”; hit that zone."],
+ score:"called zone 1 · target 2 · 10 swings each.",cues:["L–R–L, last two fast","Elbow high, contact in front","Turn body or wrist to aim"],next:"add one blocker; the hitter picks the open shot.",
+ s:{top:4.2,seq:[["b0"],["b1","m0"],["b2"],["b0"],["b1","m0"],["b3"]],zones:[{x:0.2,y:-4.0,w:1.8,h:2.6,l:"LINE"},{x:5.6,y:-2.3,w:3.2,h:1.9,l:"CROSS"}],
+  moves:[[-0.2,4.6,1.0,1.3]],balls:[[4.5,7.8,5.9,1.1,0.12],[6,1.0,1.2,0.8,-0.3],[1.1,0.8,1.1,-2.6,0,0.9],[1.1,0.8,6.3,-0.9,-0.1,0.9]],
+  people:[{x:6,y:1.0,k:"S"},{x:-0.2,y:4.8,l:"H",n:"hitter line",nx:36,ny:4},{x:-0.2,y:5.7,l:"H"},{x:4.5,y:7.9,k:"C",n:"toss + call"}],notes:[{x:1.6,y:2.9,t:"L–R–L",a:"start"}]}},
+{id:"hit-shots",t:"Hitting",title:"Hit, tip or roll",time:"15 min",who:"setter, hitters, 1 blocker",aim:"Choose the right shot against a block instead of always swinging hard.",
+ steps:["A blocker on the far side stands opposite 4.","Setter sets 4; the hitter approaches the same way every time.","Coach calls “hit”, “tip” or “roll” late, or the hitter reads the blocker's hands."],
+ score:"kill 2 · ball kept in play 1 · error −1.",cues:["Same approach for every shot","Open-hand tip, don't push or catch","Roll: slow arm, topspin deep"],next:"live block plus two defenders.",
+ s:{top:3.4,seq:[["b0"],["b1","m0"],["b2"],["b0"],["b1","m0"],["b3"]],zones:[{x:2.4,y:-2.1,w:2.3,h:1.5,l:"TIP"},{x:6.2,y:-2.8,w:2.6,h:1.4,l:"DEEP"}],
+  moves:[[-0.2,4.6,1.0,1.3]],balls:[[4.5,7.8,5.9,1.1,0.12],[6,1.0,1.2,0.8,-0.3],[1.1,0.8,3.5,-1.3,-0.4,0.9],[1.1,0.8,7.4,-2.4,-0.15,0.9]],
+  people:[{x:1.2,y:-0.6,k:"X",l:"B",n:"blocker",nx:2,ny:-18},{x:6,y:1.0,k:"S"},{x:-0.2,y:4.8,l:"H"},{x:-0.2,y:5.7,l:"H"},{x:4.5,y:7.9,k:"C",n:"calls the shot"}]}},
+{id:"block-close",t:"Blocking",title:"Read, move, close the block",time:"15 min",who:"front row + coach on box",aim:"The middle reads and closes beside the outside blocker.",
+ steps:["Coach on a box attacks from either side.","The opposite (right-side blocker) sets the edge.","Middle closes with step–cross–step; both block."],
+ score:"touch 1 · stuff 2 · ball through a gap −1.",cues:["Setter → ball → hitter","No gap in the seam","Press hands over, don't touch the net"],next:"mix in tips; the back row covers.",
+ s:{top:3.2,seq:[["m0"],["b0"]],moves:[[4.5,0.9,6.9,0.6]],balls:[[7.6,-1.6,7.3,0.1,0.05]],
+  people:[{x:7.6,y:-1.7,k:"C",n:"coach on box",nx:-50,ny:4},{x:1.4,y:-1.7,k:"C",n:"or here",nx:42,ny:4},{x:7.8,y:0.6,l:"OP",n:"sets the edge",nx:-8,ny:30},{x:4.5,y:0.9,l:"MB",n:"step–cross–step",ny:30},{x:1.3,y:0.9,l:"OH"},{x:7.0,y:5.2,l:"D"},{x:4.5,y:6.8,l:"D"},{x:2.0,y:5.2,k:"L",l:"Li"}],
+  notes:[{x:6.4,y:2.6,t:"close the seam"}]}},
+{id:"block-transition",t:"Blocking",title:"Block, land, transition",time:"15 min",who:"outside hitters, setter, 2 coaches",aim:"Go from blocking straight into an attack approach.",
+ steps:["Outside blocks the coach's swing from a box on the far side.","Lands, turns out and backs off to 3–4 m.","Second coach feeds the setter; the outside attacks."],
+ score:"block touch 1 + kill 2. 5 reps, then swap.",cues:["Land on two feet, turn out","Back off fast and wide","Call for the set"],next:"double block with the middle; both transition.",
+ s:{top:2.4,seq:[["b0"],["m0","b1"],["m1","b2"]],moves:[[1.2,0.8,0.5,3.6],[0.5,3.6,1.1,1.3]],
+  balls:[[1.3,-1.6,1.2,0.2,0.05],[4.5,7.8,6,1.1,0.12],[6,0.9,1.2,0.8,-0.3]],
+  people:[{x:1.3,y:-1.7,k:"C",n:"coach on box",nx:52,ny:4},{x:1.2,y:0.8,l:"OH",n:"blocker",nx:40,ny:4},{x:6,y:0.9,k:"S"},{x:4.5,y:7.9,k:"C",n:"second ball"}],notes:[{x:1.7,y:2.6,t:"back off",a:"start"}]}},
+{id:"pass-receive",t:"Passing",title:"Three-person serve receive",time:"15–20 min",who:"libero + 2 outsides + server",aim:"Consistent passes to the target under serve pressure.",
+ steps:["Libero and two outside hitters receive in 5, 6 and 1; serve from the far side.","Pass to the target between 2 and 3.","Rate each pass 0–3; rotate positions after 10."],
+ score:"average 2.0+ over 10 serves (3 = all options, 0 = ace).",cues:["Feet first, then platform","Angle to target, no swing","Read the server's toss"],next:"serve the seams and short zones.",
+ s:{top:2.2,seq:[["b0","m0"],["b1"]],hoops:[{x:6,y:0.9,l:"target",dy:-20}],balls:[[3,-1.6,1.6,6.2,0.12],[1.6,6.2,5.8,1.1,-0.2]],moves:[[1.3,7.2,1.6,6.4]],
+  people:[{x:3,y:-1.6,k:"C",n:"server",nx:34,ny:4},{x:1.3,y:7.3,l:"OH",n:"pos 5"},{x:4.5,y:7.6,k:"L",l:"Li",n:"pos 6"},{x:7.6,y:7.3,l:"OH",n:"pos 1"},{x:6.9,y:1.4,k:"S"}]}},
+{id:"pass-butterfly",t:"Passing",title:"Butterfly passing",time:"15 min",who:"whole squad in lines",aim:"High-volume passing with constant movement and talk.",
+ steps:["Server line on the far side, passer in 5, target player at the setter spot.","Serve → pass to the target → passer follows the pass to become target.","Target catches, runs the ball to the server line."],
+ score:"team target: 20 passes rated 2+ before 5 errors.",cues:["Low and still at contact","Call every ball","Keep the lines moving"],next:"run it from 1 at the same time, two balls going.",
+ s:{top:2.6,seq:[["b0"],["b1"],["m0","m1"]],moves:[[1.6,6.4,5.4,1.7],[6.1,1.0,8.6,-0.6]],balls:[[6.5,-2.0,1.6,6.2,-0.1],[1.6,6.2,5.9,1.1,-0.2]],
+  people:[{x:6.5,y:-2.0,k:"C",n:"server line",nx:-50,ny:4},{x:1.6,y:6.4,n:"passer",nx:-44,ny:5},{x:1.6,y:7.4},{x:6.1,y:1.0,l:"T",n:"target",nx:-30,ny:5}],notes:[{x:3.9,y:4.6,t:"follow your pass",a:"start"}]}},
+{id:"oos-setter-digs",t:"Out of system",title:"Setter digs, libero sets",time:"15 min",who:"6 players incl. libero",aim:"When the setter takes the first ball, the libero sets a hittable high ball.",
+ steps:["Coach on a box hits at the setter in right-back.","Setter digs high to the middle, behind the 3 m line, and calls “Libero!”.","Libero sets high to 4 from behind the line; the outside attacks."],
+ rule:LIBERO_RULE,
+ score:"wash: 2 attacks in a row wins a point, first to 5.",cues:["Dig high, to the middle","Libero: hands behind the line, or bump set","Hitter waits wide"],next:"dig lands in front of the 3 m line: the libero must bump set, or the opposite sets.",
+ s:{top:2.2,seq:[["b0"],["b1","m0"],["b2","m1"]],zones:[{x:0.2,y:3.05,w:8.6,h:0.5,l:""}],moves:[[4.5,7.4,5.3,4.6],[0.8,4.1,1.1,1.7]],
+  balls:[[6.5,-1.4,7.4,7.0,0.1],[7.4,7.0,5.3,4.4,-0.3],[5.3,4.4,1.3,1.4,0.25]],
+  people:[{x:6.5,y:-1.5,k:"C",n:"coach on box",nx:-50,ny:4},{x:7.5,y:7.2,k:"S",n:"digs, calls Libero!",ny:30},{x:4.5,y:7.5,k:"L",l:"Li",n:"libero",ny:30},{x:0.8,y:4.3,l:"OH",n:"pos 4"},{x:1.6,y:7.3,l:"D"},{x:4.5,y:0.9,l:"MB"},{x:7.8,y:1.0,l:"OP"}],
+  notes:[{x:3.4,y:5.4,t:"set from behind the line"}]}},
+{id:"oos-high-ball",t:"Out of system",title:"Out-of-system high ball",time:"15 min",who:"whole squad",aim:"Any player can set a hittable high ball from the backcourt.",
+ steps:["Coach behind the end line throws awkward “dug” balls.","Nearest non-setter calls it and sets high to 4.","Hands if square, bump set if not; the hitter attacks."],
+ rule:LIBERO_RULE,
+ score:"hittable set 1 · kill off it 2. Rotate after 6 balls.",cues:["Call early: “Mine!”","Face the target first","High, 1–2 m off the net"],next:"3v3 or 4v4 where the second contact can't be the setter.",
+ s:{seq:[["b0","m0"],["b1","m1"]],moves:[[1.8,7.6,2.6,6.1],[0.8,4.2,1.2,1.7]],balls:[[4.6,9.4,2.6,6.0,-0.25],[2.6,5.9,1.4,1.6,0.25]],
+  people:[{x:4.6,y:9.6,k:"C",nx:44,ny:5,n:"dug ball"},{x:1.8,y:7.6,k:"L",l:"Li",n:"nearest player",nx:6,ny:30},{x:4.5,y:7.2,l:"D"},{x:7.5,y:7.6,l:"D"},{x:0.8,y:4.4,l:"OH",n:"pos 4"}],
+  notes:[{x:3.2,y:3.5,t:"high, 1–2 m off net",a:"start"}]}},
+{id:"free-transition",t:"Free ball",title:"Free ball transition",time:"15 min",who:"6 players incl. libero",aim:"Easy ball over → libero passes → fast in-system attack.",
+ steps:["Front row at the net, setter in right-back, libero in 5 or 6.","Coach tosses an easy ball; the first player to see it calls “Free!”.","Front row drops to 3 m, setter releases, the libero passes to target, attack."],
+ score:"in-system attack 1 · middle or combo kill 2 · missed call −1.",cues:["Libero takes every free ball she can reach","Front row off the net before it crosses","Hitters call sets early"],next:"a second free ball straight after the attack.",
+ s:{top:2.2,seq:[["b0","m0","m1","m2","m3"],["b1"]],zones:[{x:0.3,y:2.9,w:8.4,h:1.1}],ghost:[[1.2,0.7],[4.5,0.7],[7.8,0.7]],
+  moves:[[1.2,0.9,1.2,3.0],[4.5,0.9,4.5,3.0],[7.8,0.9,7.8,3.0],[7.6,7.4,6.2,1.3]],balls:[[3,-1.5,3.8,6.4,0.15],[3.8,6.4,5.9,1.0,-0.2]],
+  people:[{x:3,y:-1.5,k:"C",n:"easy ball over",nx:56,ny:4},{x:1.2,y:3.4,l:"OH"},{x:4.5,y:3.4,l:"MB"},{x:7.8,y:3.4,l:"OP"},{x:7.6,y:7.4,k:"S",n:"release"},{x:3.8,y:6.6,k:"L",l:"Li",n:"libero: Free!",ny:30},{x:1.5,y:7.4,l:"OH"}],
+  notes:[{x:2.9,y:2.55,t:"drop to the 3 m line"}]}},
+{id:"free-three",t:"Free ball",title:"Three free balls, three hitters",time:"15 min",who:"6 players incl. libero",aim:"Use the whole net on free balls, not just the outside.",
+ steps:["Coach sends three free balls in a row; the libero passes each one.","Each must be attacked by a different hitter: 4, middle quick, then 2.","Any error restarts the set of three."],
+ score:"three kills with three different hitters = 1 point.",cues:["Libero: high pass to target","Hitters call before the pass","Setter spreads the ball"],next:"coach sends a hard down ball as the fourth.",
+ s:{top:2.2,seq:[["b0","m0","m1","m2"],["b1","m3"],["b2"]],ghost:[[1.2,0.7],[4.5,0.7],[7.8,0.7]],
+  moves:[[1.2,0.9,1.2,3.0],[4.5,0.9,4.5,3.0],[7.8,0.9,7.8,3.0],[4.5,3.2,4.9,1.1]],balls:[[5.5,-1.5,4.4,6.6,0.12],[4.4,6.6,5.9,1.0,-0.15],[6.1,0.9,5.0,0.8,-0.5]],
+  people:[{x:5.5,y:-1.5,k:"C",n:"ball 1 of 3",nx:-48,ny:4},{x:1.2,y:3.4,l:"OH"},{x:4.5,y:3.4,l:"MB"},{x:7.8,y:3.4,l:"OP"},{x:6.1,y:0.9,k:"S"},{x:4.4,y:6.8,k:"L",l:"Li"},{x:1.6,y:7.4,l:"OH"}],
+  notes:[{x:3.6,y:2.0,t:"quick",a:"end"}]}},
+{id:"comm-seam",t:"Communication",title:"Call the seam",time:"10–15 min",who:"2–3 passers + server",aim:"Early calls so seam balls never drop.",
+ steps:["Two passers about 3 m apart; the server aims at the seam.","“Mine!” before the ball crosses the net; partner calls “You!”.","Setter calls the set; the passer calls “Covering!”."],
+ score:"a late or missing call loses the point, even after a good pass.",cues:["Agree the seam rule first","Loud, once: first call stands","Face the passer"],next:"6v6 where every uncalled touch loses the rally.",
+ s:{top:2.2,seq:[["b0","m0"],["b1"]],zones:[{x:3.4,y:5.0,w:2.2,h:3.2,l:"SEAM"}],hoops:[{x:6,y:0.9,l:"target",dy:-20}],
+  balls:[[4.5,-1.5,4.6,6.4,0.02],[4.6,6.5,5.8,1.1,-0.15]],moves:[[5.8,7.4,4.9,6.6]],
+  people:[{x:4.5,y:-1.6,k:"C",n:"serves the seam",nx:66,ny:4},{x:2.7,y:6.4,n:"“You!”",ny:30},{x:6.0,y:7.5,k:"L",l:"Li",n:"“Mine!”",ny:30},{x:6.9,y:1.4,k:"S"}]}},
+{id:"comm-defence",t:"Communication",title:"Defence calls",time:"10 min",who:"back row + coach on box",aim:"Defenders name the ball before it lands: “Tip!”, “Deep!”.",
+ steps:["Back row in base defence. Coach on a box mixes tips and deep shots.","The first player to read it calls “Tip!” or “Deep!”.","Nearest defender plays it up; everyone else opens up."],
+ score:"ball played up after a call 1 · no call −1, even if dug.",cues:["Read the hitter's arm","Call before the coach's contact ends","One call, one mover"],next:"add a front-row blocker who also calls “Tool!” or “Covered!”.",
+ s:{top:2.2,seq:[["b0","m0"],["b1","m1"]],moves:[[1.6,6.6,2.8,3.6],[7.5,6.6,7.9,8.2]],balls:[[4.5,-1.5,3.0,3.3,-0.2],[4.5,-1.5,7.9,8.4,0.08]],
+  people:[{x:4.5,y:-1.6,k:"C",n:"coach on box",nx:56,ny:4},{x:1.6,y:6.6,k:"L",l:"Li"},{x:4.5,y:7.4,l:"D"},{x:7.5,y:6.6,k:"S"}],
+  notes:[{x:3.0,y:2.7,t:"“Tip!”"},{x:7.0,y:8.75,t:"“Deep!”",a:"end"}]}},
+{id:"pipe-decoy",t:"Pipe",title:"Pipe with a quick decoy",time:"15 min",who:"setter, back row, middle",aim:"Back-row attack from 6 that holds the middle blocker.",
+ steps:["Coach tosses to the setter.","Middle runs a quick as a decoy.","Hitter from about 7 m takes off behind the 3 m line."],
+ score:"kill 2 · deep attack 1 · foot fault 0.",cues:["Start after the middle","Take off behind, land in front","Same hands for quick and pipe"],next:"add a live middle blocker.",
+ rule:"A back-row player can attack above the net only if she takes off behind the 3 m line. The libero can never attack above the net.",
+ s:{seq:[["b0"],["m1","m0"],["b1"]],hoops:[{x:4.5,y:3.6,l:"pipe contact",dy:5,dx:-62}],moves:[[4.6,7.4,4.5,4.0],[3.2,2.3,4.9,1.1]],balls:[[2,8.2,5.9,1.0,0.12],[6,0.9,4.6,3.4,-0.25]],
+  people:[{x:6,y:0.9,k:"S"},{x:3.2,y:2.3,l:"MB",n:"quick decoy",nx:-52,ny:5},{x:4.6,y:7.6,l:"OH",n:"pos 6, ~7 m",ny:30},{x:2,y:8.3,k:"C",n:"toss"}],notes:[{x:4.9,y:5.6,t:"take off behind line",a:"start"}]}},
+{id:"serve-targets",t:"Serving",title:"Target serving",time:"15 min",who:"whole squad, 2 baskets",aim:"Serve to the zone you choose, not just over the net.",
+ steps:["Servers behind the end line; zones marked on the far side.","Coach calls a zone before each toss: 1, 5, 6 or short.","10 serves each, then switch ends."],
+ score:"in the called zone 2 · in court 1 · error 0. Beat your last score.",cues:["Same toss every time","Step towards the target","Aim with the shoulders"],next:"a passer receives; it only counts if the pass is rated 1 or less.",
+ rule:"Serve within 8 seconds of the whistle, from behind the end line and between the sideline extensions.",
+ s:{top:9,bottom:1.5,seq:[["b0"],["b1"],["b2"]],zones:[{x:0.3,y:-8.1,w:2.6,h:2.4,l:"ZONE 1"},{x:3.2,y:-8.1,w:2.6,h:2.4,l:"ZONE 6"},{x:6.1,y:-8.1,w:2.6,h:2.4,l:"ZONE 5"},{x:2.6,y:-2.6,w:3.8,h:1.8,l:"SHORT"}],
+  balls:[[4.5,9.6,1.6,-7.4,0.06],[4.5,9.6,4.5,-1.7,0],[4.5,9.6,7.4,-7.4,-0.06]],
+  people:[{x:4.5,y:9.7,l:"Sv",n:"server",nx:46,ny:5},{x:9.3,y:-4.6,k:"C",n:"calls zone",nx:-50,ny:5}]}},
+{id:"def-dig",t:"Defence",title:"Dig to target",time:"15 min",who:"3 defenders + coach on box",aim:"Dig hard balls high to the middle of the court.",
+ steps:["Coach on a box at 4 on the far side hits at the back row.","Defenders start in base and dig to the hoop, 3 m off the net in the middle.","Swap defenders every 10 balls."],
+ score:"dig into the hoop zone 2 · playable 1 · shank 0. First to 15.",cues:["Low, still, weight forward","Dig up the middle, high","Absorb hard balls"],next:"add a blocker; defenders move around the block.",
+ s:{top:2.2,seq:[["b0"],["b1"],["b2"],["b3"]],hoops:[{x:4.8,y:2.8,l:"dig target"}],
+  balls:[[1.4,-1.5,7.3,6.6,0.08],[7.3,6.6,4.9,2.9,0.3],[1.4,-1.5,4.5,7.3,0.05],[4.5,7.3,4.8,3.0,0.15]],
+  people:[{x:1.4,y:-1.6,k:"C",n:"coach on box",nx:56,ny:4},{x:1.5,y:6.8,k:"L",l:"Li"},{x:4.5,y:7.5,l:"D"},{x:7.4,y:6.8,l:"D"}]}}
+];
+
+D.push(
+{id:"set-dump",t:"Setting",title:"Jump set or setter dump",time:"15 min",who:"setters, 2 hitters, coach",aim:"A front-row setter who can attack the second ball keeps the block honest.",
+ steps:["Coach passes tight to the net; the setter jumps to set.","She sets 4 or back-sets 2, or dumps into the short zone.","Coach shouts “dump” on some balls to force the choice."],
+ rule:"The setter can only attack the ball above the net from the front row. In the back row she must set, not dump.",
+ score:"hittable jump set 1 · dump that lands 2 · net touch −1.",cues:["Same jump every time","Left hand dump, ball short","Look at the blocker, not the ball"],next:"live middle blocker on the far side.",
+ s:{top:2.2,seq:[["b0"],["b1"],["b0"],["b2"],["b0"],["b3"]],zones:[{x:2.6,y:-1.6,w:2.6,h:1.3,l:"DUMP"}],hoops:[{x:1,y:0.8,l:"4"},{x:8.2,y:0.8,l:"2"}],
+  balls:[[4.5,7.6,6,1.1,0.12],[6.1,0.9,1.3,0.8,-0.3],[6.1,0.9,8.0,0.8,0.5],[6.1,0.9,4.0,-0.9,0.3]],
+  people:[{x:6.1,y:0.9,k:"S",n:"front-row setter",ny:30},{x:4.5,y:7.8,k:"C",n:"pass tight"}]}},
+{id:"hit-opposite",t:"Hitting",title:"Back set to the opposite",time:"15 min",who:"setter + right-side hitters",aim:"Hitting a back set from 2, line and cross.",
+ steps:["Hitters queue outside the right sideline.","Coach tosses, setter back-sets to 2.","Coach calls line or cross; hit that zone."],
+ score:"called zone 1 · target 2 · 10 swings each.",cues:["Start wide, outside the court","Wait for the back set, then go","Ball in front of the hitting shoulder"],next:"add a blocker who shows line or cross.",
+ s:{top:4.2,seq:[["b0"],["b1","m0"],["b2"],["b0"],["b1","m0"],["b3"]],zones:[{x:7.0,y:-4.0,w:1.8,h:2.6,l:"LINE"},{x:0.2,y:-2.3,w:3.2,h:1.9,l:"CROSS"}],
+  moves:[[9.2,4.6,8.0,1.3]],balls:[[4.5,7.8,5.9,1.1,0.12],[6,1.0,7.9,0.8,0.45],[7.9,0.8,7.9,-2.6,0,0.9],[7.9,0.8,2.2,-1.0,0.1,0.9]],
+  people:[{x:6,y:1.0,k:"S"},{x:9.2,y:4.8,l:"OP",n:"hitter line",nx:-40,ny:4},{x:9.2,y:5.7,l:"OP"},{x:4.5,y:7.9,k:"C",n:"toss + call"}]}},
+{id:"block-footwork",t:"Blocking",title:"Block footwork along the net",time:"10 min",who:"front-row players in pairs",aim:"Fast, legal footwork to the block spot without drifting.",
+ steps:["Blocker starts in the middle; partner calls “4!”, “3!” or “2!”.","Shuffle for short moves, cross-step for long ones, then block.","6 blocks, then swap with the partner."],
+ rule:"Touching the net between the antennae is a fault. Hands may reach over the net, but don't touch the ball before the hitter does.",
+ score:"partner gives 1 point per jump with hands over and no drift.",cues:["Shuffle short, cross-step long","Hands at shoulder height","Jump straight up"],next:"partner tosses a ball to a hitter, who attacks the block.",
+ s:{seq:[["m0"],["m1"]],ghost:[[1.3,0.7],[7.8,0.7]],moves:[[4.5,0.7,1.5,0.7],[1.5,0.7,7.6,0.7]],
+  people:[{x:4.5,y:0.7,l:"MB"},{x:4.5,y:4.0,n:"calls 4, 3 or 2",ny:30}],notes:[{x:1.3,y:1.8,t:"4"},{x:4.5,y:1.8,t:"3"},{x:7.8,y:1.8,t:"2"}]}},
+{id:"pass-corners",t:"Passing",title:"Four-corner passing",time:"10 min",who:"groups of 3",aim:"Footwork to the ball in every direction, then a still platform.",
+ steps:["Passer starts in the middle of the backcourt.","Coach tosses to one of four spots: forward, back, left, right.","Passer moves, stops and passes to the target. 12 balls, then rotate."],
+ score:"pass rated 2+ = 1 point. 9 of 12 to rotate out.",cues:["First step towards the ball","Stop before you pass","Shoulders to the target"],next:"coach tosses harder and lower; then live serves.",
+ s:{seq:[["b0","m0"],["b1"]],ghost:[[3.0,5.2],[6.0,5.2],[3.0,7.8],[6.0,7.8]],hoops:[{x:6,y:0.9,l:"target",dy:-20}],moves:[[4.5,6.5,3.1,5.4]],
+  balls:[[1.2,4.0,3.0,5.2,0.2],[3.0,5.2,5.8,1.1,-0.2]],people:[{x:4.5,y:6.5,n:"passer",ny:30},{x:1.2,y:4.0,k:"C",n:"toss"},{x:6.9,y:1.4,l:"T"}]}},
+{id:"oos-chase",t:"Out of system",title:"Chase and save",time:"10 min",who:"groups of 3",aim:"Get a shanked ball back into court as a playable high ball.",
+ steps:["Coach throws a ball off the court, as if from a bad first touch.","The nearest player chases it and plays it back high into the middle.","The third player sets or attacks it."],
+ score:"ball back into play 1 · attackable 2. 6 balls each.",cues:["Run to where the ball will land","Face the court before contact","High and to the middle"],next:"the third player must hit; the coach adds a blocker.",
+ s:{seq:[["b0","m0"],["b1","m1"]],moves:[[7.4,6.8,9.3,7.8],[1.0,4.2,1.5,2.3]],balls:[[4.5,4.4,9.4,8.0,-0.25],[9.4,8.0,2.0,2.6,0.25]],
+  people:[{x:4.5,y:4.4,k:"C",n:"throws off court",ny:30},{x:7.4,y:6.8,l:"D",n:"chases",nx:-36,ny:4},{x:1.0,y:4.4,l:"OH"}],notes:[{x:5.6,y:3.2,t:"high, to the middle"}]}},
+{id:"free-or-down",t:"Free ball",title:"Free or down ball?",time:"15 min",who:"6 players incl. libero",aim:"Read the ball early and switch to the right formation.",
+ steps:["Coach either tosses an easy ball (free) or hits a standing down ball.","Players call “Free!” or “Down!” as soon as they read it.","Free: front row drops off and the libero passes. Down: front row stays at the net but doesn't block, back row moves deeper."],
+ score:"right call and formation before contact 1 · attack off it +1.",cues:["Read the coach's arm","Call it once, everyone repeats","Libero takes the free ball"],next:"coach adds a real attack, so the team calls “Block!” too.",
+ s:{top:2.2,seq:[["m0","m1","m2"],["b0"],["b1"]],ghost:[[1.2,0.7],[4.5,0.7],[7.8,0.7]],zones:[{x:0.3,y:2.9,w:8.4,h:1.1}],
+  moves:[[1.2,0.9,1.2,3.0],[4.5,0.9,4.5,3.0],[7.8,0.9,7.8,3.0]],balls:[[4.5,-1.5,3.4,6.6,0.12],[3.4,6.6,5.9,1.0,-0.2]],
+  people:[{x:4.5,y:-1.6,k:"C",n:"free or down?",nx:58,ny:4},{x:1.2,y:3.4,l:"OH"},{x:4.5,y:3.4,l:"MB"},{x:7.8,y:3.4,l:"OP"},{x:3.4,y:6.8,k:"L",l:"Li",n:"calls it",ny:30},{x:6.6,y:7.2,k:"S"},{x:1.4,y:7.4,l:"OH"}]}},
+{id:"comm-three",t:"Communication",title:"Three calls every rally",time:"20 min",who:"6v6",aim:"Every rally has a first-ball call, a set call and a cover call.",
+ steps:["Play normal 6v6 rallies from a coach's toss or serve.","The first contact calls “Mine!”, the hitter calls her set, everyone near calls “Cover!”.","The coach listens; a rally only counts if all three calls are heard."],
+ score:"rally point counts only with all three calls; otherwise replay.",cues:["Loud and early","Hitters call before the pass","Cover low, around the hitter"],next:"add a fourth call: the setter calls the block on the far side.",
+ s:{top:2.2,seq:[["b0"],["b1"],["b2","m0","m1"]],moves:[[4.5,3.4,2.4,2.4],[3.3,6.8,1.6,3.4]],balls:[[5,-1.5,3.3,6.6,0.1],[3.3,6.6,5.9,1.0,-0.2],[6.1,0.9,1.3,0.8,-0.3]],
+  people:[{x:5,y:-1.6,k:"C",n:"serve",nx:40,ny:4},{x:3.3,y:6.8,k:"L",l:"Li",n:"“Mine!”",ny:30},{x:6.1,y:0.9,k:"S"},{x:1.0,y:1.5,l:"OH",n:"“Hut!”",nx:0,ny:-18},{x:4.5,y:3.4,l:"MB"},{x:7.8,y:1.0,l:"OP"}],
+  notes:[{x:2.8,y:4.6,t:"“Cover!”"}]}},
+{id:"pipe-timing",t:"Pipe",title:"Pipe approach timing",time:"10 min",who:"back-row hitters + coach",aim:"Learn the pipe take-off and timing without a setter.",
+ steps:["Coach stands near the net and tosses high, about 1 m behind the 3 m line.","Hitter starts in 6, about 7 m from the net, and approaches as the toss goes up.","Take off behind the line, hit deep, land in front of the line."],
+ rule:"A back-row player can attack above the net only if she takes off behind the 3 m line.",
+ score:"clean take-off and a deep hit 1. Aim for 8 of 10.",cues:["Start late, finish fast","Plant behind the line","Hit deep, down the middle"],next:"replace the coach's toss with a setter.",
+ s:{seq:[["b0","m0"]],hoops:[{x:4.5,y:3.6,l:"contact",dx:-50,dy:5}],moves:[[4.5,7.6,4.5,4.0]],balls:[[6.3,1.2,4.6,3.4,-0.3]],
+  people:[{x:6.3,y:1.2,k:"C",n:"high toss"},{x:4.5,y:7.8,l:"OH",n:"start in 6",ny:30}],notes:[{x:4.9,y:5.6,t:"take off behind line",a:"start"}]}},
+{id:"pipe-receive",t:"Pipe",title:"Pass, then pipe",time:"15 min",who:"outside hitters, setter, server",aim:"The back-row outside passes, then gets back in time to hit a pipe.",
+ steps:["Server serves to the back-row outside in 6.","She passes to the target, then backs off and approaches for the pipe.","Setter sets the pipe; she attacks."],
+ rule:"A back-row player can attack above the net only if she takes off behind the 3 m line.",
+ score:"good pass + pipe kill 3 · good pass + pipe in 2 · bad pass 0.",cues:["Pass, then back off fast","Approach on the setter's hands","Take off behind the line"],next:"setter chooses between the pipe and 4; the hitter must approach every time.",
+ s:{top:2.2,seq:[["b0"],["b1","m0"],["m1","b2"]],moves:[[4.1,6.8,4.4,7.8],[4.4,7.8,4.5,4.0]],balls:[[3,-1.6,4.1,6.6,0.08],[4.1,6.6,5.9,1.0,-0.2],[6.0,0.9,4.6,3.4,-0.25]],
+  people:[{x:3,y:-1.6,k:"C",n:"server",nx:38,ny:4},{x:4.1,y:6.8,l:"OH",n:"pass",nx:-32,ny:4},{x:6.0,y:0.9,k:"S"},{x:1.6,y:7.0,k:"L",l:"Li"}],notes:[{x:4.9,y:5.6,t:"back off, then go",a:"start"}]}},
+{id:"serve-streak",t:"Serving",title:"Serving streak ladder",time:"10 min",who:"whole squad",aim:"Consistency under pressure: in, in, in.",
+ steps:["Everyone serves from behind the end line at the same time.","Count your streak of serves that land in the deep third.","A miss resets your streak to zero."],
+ rule:"Serve within 8 seconds of the whistle, from behind the end line and between the sideline extensions.",
+ score:"best streak in 5 minutes wins.",cues:["Same routine every serve","Breathe before the toss","Firm wrist, follow through to target"],next:"only jump or float serves count, whichever is your game serve.",
+ s:{top:9,bottom:1.5,seq:[["b0","b1","b2"]],zones:[{x:0.3,y:-8.1,w:8.4,h:2.6,l:"DEEP THIRD"}],balls:[[1.5,9.6,2.0,-7.0,0.05],[4.5,9.6,4.5,-6.8,0],[7.5,9.6,7.0,-7.0,-0.05]],
+  people:[{x:1.5,y:9.7,l:"Sv"},{x:4.5,y:9.7,l:"Sv"},{x:7.5,y:9.7,l:"Sv"}]}},
+{id:"serve-defend",t:"Serving",title:"Serve and defend",time:"15 min",who:"servers + coach on box",aim:"Serve, then get into defence before the other side attacks.",
+ steps:["Server serves from behind the end line.","She runs straight into her base position in 1.","Coach on a box on the far side hits at her; she digs to the target."],
+ score:"serve in + dig to target 2 · serve in only 1 · serve error 0.",cues:["Don't watch your serve","Be stopped before the attack","Dig high to the middle"],next:"two servers in a row, the first one covers the second's defence.",
+ s:{top:2.2,bottom:1.5,seq:[["b0"],["m0"],["b1"],["b2"]],hoops:[{x:4.8,y:2.8,l:"dig target"}],moves:[[7.5,9.7,7.4,6.9]],
+  balls:[[7.5,9.6,4.6,-1.8,-0.05],[1.6,-1.5,7.3,6.7,0.06],[7.3,6.7,4.9,2.9,0.3]],
+  people:[{x:7.5,y:9.7,l:"Sv",n:"server",nx:-40,ny:5},{x:1.6,y:-1.6,k:"C",n:"coach on box",nx:56,ny:4}]}},
+{id:"def-read",t:"Defence",title:"Base to read defence",time:"15 min",who:"back row, 2 blockers, coach on box",aim:"Move from base to the right defensive spots for an attack from the far side's 4.",
+ steps:["Back row starts in base; blockers at the net opposite the coach.","As the coach tosses to herself, defenders move: 1 to the line, 6 deep, 5 to the cross.","Coach hits; the defender digs to the target."],
+ score:"in position before contact 1 · dig to target +1.",cues:["Move on the toss, stop on the hit","Stay outside the block's shadow","Weight forward at contact"],next:"coach alternates between 4 and 2 on the far side.",
+ s:{top:2.2,seq:[["m0","m1","m2"],["b0"],["b1"]],ghost:[[2.0,5.5],[4.5,6.0],[7.0,5.5]],hoops:[{x:4.8,y:2.8,l:"target",dx:-36,dy:5}],
+  moves:[[2.0,5.5,1.6,6.2],[4.5,6.0,5.0,8.0],[7.0,5.5,8.2,6.6]],balls:[[7.8,-1.6,1.7,6.0,-0.08],[1.7,6.0,4.6,2.9,-0.2]],
+  people:[{x:7.8,y:-1.6,k:"C",n:"coach on box",nx:-52,ny:5},{x:7.9,y:0.6,l:"OP"},{x:6.9,y:0.6,l:"MB"},{x:1.6,y:6.2,k:"L",l:"Li",n:"5: cross",ny:30},{x:5.0,y:8.0,l:"D",n:"6: deep",nx:38,ny:4},{x:8.2,y:6.6,l:"D",n:"1: line",ny:30}]}},
+{id:"def-cover",t:"Defence",title:"Block cover",time:"15 min",who:"6 players + 2 blockers on boxes",aim:"Everyone near the hitter gets low to play the ball back off the block.",
+ steps:["Two players on boxes on the far side block the outside on purpose.","As the set goes to 4, the middle, libero and opposite move into a cover ring.","The ball rebounds off the block; a coverer digs it to the setter and the play continues."],
+ score:"covered rebound 1 · re-attack kill off it 2.",cues:["Get low, close to the hitter","Eyes on the block, not the hitter","Dig it high to the setter"],next:"blockers sometimes let it through, so covers must read.",
+ s:{top:2.2,seq:[["b0","m0","m1","m2"],["b1"],["b2"]],moves:[[4.5,2.6,2.4,2.2],[1.6,6.4,1.5,3.4],[6.2,4.6,3.2,4.0]],
+  balls:[[6.0,0.9,1.2,0.8,-0.3],[1.2,0.4,2.2,2.6,0.25],[2.2,2.6,5.9,1.0,-0.2]],
+  people:[{x:1.2,y:-0.5,k:"X",l:"B"},{x:2.2,y:-0.5,k:"X",l:"B"},{x:6.0,y:0.9,k:"S"},{x:1.0,y:1.2,l:"OH",n:"hits into block",nx:0,ny:-18},{x:4.5,y:2.6,l:"MB"},{x:1.6,y:6.4,k:"L",l:"Li"},{x:6.2,y:4.6,l:"OP"}],
+  notes:[{x:3.3,y:5.2,t:"cover ring"}]}}
+);
+D.sort((a,b)=>TOPICS.indexOf(a.t)-TOPICS.indexOf(b.t));
+const PL={
+"set-zones":[3,"Coach tosses instead of passing; setter collects her own balls.","Two setters alternate; extra players stand at the hoops and become hitters."],
+"set-move":[2,"Pairs: the partner tosses, then stands at 4 as the target.","Two or three groups of 3 across both courts."],
+"set-dump":[3,"Use hoops instead of hitters.","Two setters alternate; live hitters at 4 and 2."],
+"hit-targets":[3,"Coach sets if there's no setter; the hitter collects balls.","Lines at 4 and 2; extra players shag and hold targets on the far side."],
+"hit-shots":[4,"No blocker: coach on a box holds a block pad.","Add two far-side defenders who score when they dig the shot."],
+"hit-opposite":[3,"Coach sets if there's no setter.","Lines at 2 and 4 alternate."],
+"block-close":[3,"Two blockers only; coach hits from one side.","Fresh pairs rotate in every 5 balls; add back-row diggers."],
+"block-transition":[3,"One coach hits, then tosses the second ball to the setter.","Run it from both 4 and 2 with two lines."],
+"block-footwork":[2,"Pairs.","Three pairs along the net at once, in a wave."],
+"pass-receive":[3,"Two passers split the court; coach serves.","Two servers alternate; waiting passers serve or shag."],
+"pass-butterfly":[5,"With 5: one server, one passer, one target; rotate every ball.","Run both halves of the court at once."],
+"pass-corners":[2,"Coach tosses and is also the target.","Three groups across the court."],
+"oos-setter-digs":[4,"Coach, setter, libero and one outside; skip the other spots.","Full six on court; a queue rotates in at each position."],
+"oos-high-ball":[3,"Coach, one defender, one hitter.","Three defenders and two hitter lines; everyone rotates."],
+"oos-chase":[3,"Coach is the third player.","Two groups, one on each sideline."],
+"free-transition":[5,"Drop the opposite: setter, libero and two front-row hitters.","Two teams alternate on court every ball."],
+"free-three":[4,"Coach tosses straight to the setter; still three different hitters.","Two teams alternate; losing team does a short forfeit."],
+"free-or-down":[5,"Two front-row players, libero and setter.","Two teams alternate."],
+"comm-seam":[3,"Coach serves to two passers.","Three passers, two seams; the rest serve."],
+"comm-defence":[3,"Two defenders split the backcourt.","Full back row plus blockers; groups of 3 rotate."],
+"comm-three":[6,"Under 12: play 3v3 or 4v4 on a narrow court; the three calls stay.","12+: 6v6, subs rotate in every 3 rallies."],
+"pipe-decoy":[3,"No middle: coach calls “quick” to keep the timing.","Two pipe hitters alternate; extra players block on the far side."],
+"pipe-timing":[2,"Coach and one hitter.","Two lines with two coaches tossing."],
+"pipe-receive":[4,"Coach serves; setter, one outside, one libero.","Two outsides alternate; add a second server."],
+"serve-targets":[2,"Pairs: one serves, the other fetches and calls the zone.","Serve from both ends at once."],
+"serve-streak":[2,"Pairs serve to each other across the net.","Both end lines, everyone serving."],
+"serve-defend":[3,"Coach both hits and collects; one server at a time.","Servers queue; add a libero and setter to play the dig."],
+"def-dig":[2,"One defender and the coach; swap every 6 balls.","Two boxes using both halves of the court."],
+"def-read":[4,"No blockers: cones mark where the block is.","Full back row and two blockers; waiting players call the positions."],
+"def-cover":[5,"Coach holds a block pad instead of two blockers.","Full team; two players block from boxes."]};
+D.forEach(d=>{const p=PL[d.id]||[2,"",""];d.min=p[0];d.few=p[1];d.more=p[2]});
+const SIZES=[0,2,4,6,8,12];
+const NS="http://www.w3.org/2000/svg",U=34,OX=24,RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
 function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e}
-const RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
-function anim(R){
-  if(RM||!R.seq)return;
-  const svg=R.svg, all=[...R.b,...R.m];
-  const ball=el("g",{opacity:0},svg);
-  el("circle",{r:7.5,fill:"#ffffff",stroke:"#1d2733","stroke-width":2},ball);
-  el("path",{d:"M-7 0Q0 -4 7 0M-3.5 -6.5Q-1 0 -3.5 6.5M3.5 -6.5Q1 0 3.5 6.5",fill:"none",stroke:"#1d2733","stroke-width":1.2},ball);
-  const movers=R.m.map(()=>{const g=el("circle",{r:12,fill:"rgba(255,255,255,.35)",stroke:"#ffffff","stroke-width":3,opacity:0},svg);return g});
-  let run=0,visible=false;
-  const wait=ms=>new Promise(r=>setTimeout(r,ms));
-  function tween(items,dur){return new Promise(res=>{const t0=performance.now();
-    (function f(t){const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
-      items.forEach(([pe,node])=>{const L=pe.getTotalLength(),p=pe.getPointAtLength(L*e);node.setAttribute("transform",`translate(${p.x} ${p.y})`);});
-      k<1?requestAnimationFrame(f):res()})(t0)})}
-  async function play(){
-    const my=++run;
-    while(my===run&&visible){
-      for(const step of R.seq){
-        if(my!==run)return;
-        const items=step.map(code=>{const i=+code.slice(1);return code[0]==="b"?[R.b[i],ball]:[R.m[i],movers[i]]});
-        all.forEach(e=>e.style.opacity=.3); items.forEach(([pe,n])=>{pe.style.opacity=1;n.setAttribute("opacity",1);n.setAttribute("cx",0);n.setAttribute("cy",0)});
-        ball.setAttribute("opacity",items.some(([,n])=>n===ball)?1:0);
-        await tween(items,items.some(([,n])=>n===ball)?1000:800);
-        await wait(200);
-        movers.forEach(m=>m.setAttribute("opacity",0));
-      }
-      ball.setAttribute("opacity",0); all.forEach(e=>e.style.opacity="");
-      await wait(1400);
-    }
-    ball.setAttribute("opacity",0); movers.forEach(m=>m.setAttribute("opacity",0)); all.forEach(e=>e.style.opacity="");
-  }
-  new IntersectionObserver(es=>es.forEach(e=>{visible=e.isIntersecting; if(visible)play(); else run++;}),{threshold:.35}).observe(svg);
-  svg.addEventListener("pointerenter",()=>{if(visible)play()});
-  svg.addEventListener("click",()=>{visible=true;play()});
-}
-function draw(id,s){
-  const top=s.top||0, OY=28+top*U, W=OX*2+9*U, H=OY+9*U+(s.bottom||1.3)*U;
-  const px=x=>OX+x*U, py=y=>OY+y*U;
-  const svg=document.getElementById(id); svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
-  const defs=el("defs",{},svg); const R={svg,b:[],m:[]};
-  [["b"+id,"var(--ball)"],["m"+id,"var(--move)"]].forEach(([n,c])=>{
-    const m=el("marker",{id:n,viewBox:"0 0 10 10",refX:"8",refY:"5",markerWidth:"5",markerHeight:"5",orient:"auto-start-reverse"},defs);
-    el("path",{d:"M0 0L10 5L0 10z",fill:c},m)});
+function lab(svg,x,y,t,a){const e=el("text",{x,y,"text-anchor":a||"middle","font-size":11.5,fill:"var(--line)",stroke:"var(--ink)","stroke-width":3,"stroke-opacity":.55,"paint-order":"stroke"},svg);e.textContent=t}
+let uid=0;
+function draw(svg,s,thumb){
+  const id="k"+(uid++),top=s.top||0,OY=28+top*U,W=OX*2+9*U,H=OY+9*U+(s.bottom||1.3)*U;
+  const px=x=>OX+x*U,py=y=>OY+y*U,R={svg,b:[],m:[]};
+  svg.setAttribute("viewBox",thumb?`0 ${Math.max(0,OY-4.2*U)} ${W} ${W*0.8}`:`0 0 ${W} ${H}`);
+  if(thumb)svg.setAttribute("preserveAspectRatio","xMidYMin slice");
+  const defs=el("defs",{},svg);
+  [["b"+id,"var(--ball)"],["m"+id,"var(--move)"]].forEach(([n,c])=>{const m=el("marker",{id:n,viewBox:"0 0 10 10",refX:"8",refY:"5",markerWidth:"5",markerHeight:"5",orient:"auto-start-reverse"},defs);el("path",{d:"M0 0L10 5L0 10z",fill:c},m)});
   el("rect",{x:0,y:0,width:W,height:H,fill:"var(--free)"},svg);
   if(top){el("rect",{x:px(0),y:py(-top)-3,width:9*U,height:top*U+3,fill:"var(--opp)"},svg);
-    el("line",{x1:px(0),y1:py(-top)-3,x2:px(0),y2:py(0),stroke:"var(--line)","stroke-width":3},svg);
-    el("line",{x1:px(9),y1:py(-top)-3,x2:px(9),y2:py(0),stroke:"var(--line)","stroke-width":3},svg);
+    if(top>=9)el("rect",{x:px(0),y:py(-9),width:9*U,height:9*U,fill:"none",stroke:"var(--line)","stroke-width":3},svg);
+    else{el("line",{x1:px(0),y1:py(-top)-3,x2:px(0),y2:py(0),stroke:"var(--line)","stroke-width":3},svg);el("line",{x1:px(9),y1:py(-top)-3,x2:px(9),y2:py(0),stroke:"var(--line)","stroke-width":3},svg)}
     if(top>=3.6)el("line",{x1:px(0),y1:py(-3),x2:px(9),y2:py(-3),stroke:"var(--line)","stroke-width":2.5},svg);
     const o=el("text",{x:px(8.85),y:py(-top)+14,"text-anchor":"end","font-size":11,fill:"var(--line)",opacity:.9},svg);o.textContent="OTHER SIDE"}
   el("rect",{x:px(0),y:py(0),width:9*U,height:9*U,fill:"var(--court)",stroke:"var(--line)","stroke-width":3},svg);
@@ -244,89 +338,87 @@ function draw(id,s){
   el("line",{x1:px(-.5),y1:py(0),x2:px(9.5),y2:py(0),stroke:"var(--line)","stroke-width":2,"stroke-dasharray":"3 3"},svg);
   const nt=el("text",{x:px(9.45),y:py(0)+16,"text-anchor":"end","font-size":11,fill:"var(--line)"},svg);nt.textContent="NET";
   (s.ghost||[]).forEach(([x,y])=>el("circle",{cx:px(x),cy:py(y),r:9,fill:"none",stroke:"var(--line)","stroke-width":2,"stroke-dasharray":"3 3",opacity:.85},svg));
-  (s.hoops||[]).forEach(h=>{
-    el("circle",{cx:px(h.x),cy:py(h.y),r:15,fill:"none",stroke:"var(--hoop)","stroke-width":4},svg);
+  (s.hoops||[]).forEach(h=>{el("circle",{cx:px(h.x),cy:py(h.y),r:15,fill:"none",stroke:"var(--hoop)","stroke-width":4},svg);
     el("circle",{cx:px(h.x),cy:py(h.y),r:15,fill:"none",stroke:"var(--ink)","stroke-width":1,"stroke-dasharray":"2 3"},svg);
-    if(h.l)lab(svg,px(h.x)+(h.dx||0),py(h.y)+(h.dy??30),h.l)});
+    if(h.l&&!thumb)lab(svg,px(h.x)+(h.dx||0),py(h.y)+(h.dy??30),h.l)});
   (s.moves||[]).forEach(([x1,y1,x2,y2])=>{const a={x1:px(x1),y1:py(y1),x2:px(x2),y2:py(y2)};
     el("line",{...a,stroke:"var(--line)","stroke-width":5,"stroke-linecap":"round"},svg);
     R.m.push(el("line",{...a,stroke:"var(--move)","stroke-width":2.6,"marker-end":`url(#m${id})`},svg))});
-  (s.balls||[]).forEach(([x1,y1,x2,y2,c=0.25,o=1])=>{
-    const X1=px(x1),Y1=py(y1),X2=px(x2),Y2=py(y2),dx=X2-X1,dy=Y2-Y1;
+  (s.balls||[]).forEach(([x1,y1,x2,y2,c=0.25,o=1])=>{const X1=px(x1),Y1=py(y1),X2=px(x2),Y2=py(y2),dx=X2-X1,dy=Y2-Y1;
     R.b.push(el("path",{d:`M${X1} ${Y1}Q${(X1+X2)/2-dy*c} ${(Y1+Y2)/2+dx*c} ${X2} ${Y2}`,fill:"none",stroke:"var(--ball)","stroke-width":2.6,"stroke-dasharray":"6 5",opacity:o,"marker-end":`url(#b${id})`},svg))});
-  (s.people||[]).forEach(p=>{
-    const X=px(p.x),Y=py(p.y),k=p.k||"P";
+  (s.people||[]).forEach(p=>{const X=px(p.x),Y=py(p.y),k=p.k||"P",lb=p.l||k;
     if(k==="C")el("rect",{x:X-13,y:Y-13,width:26,height:26,rx:5,fill:"var(--coach)",stroke:"var(--ink)","stroke-width":2},svg);
-    else el("circle",{cx:X,cy:Y,r:13,fill:k==="S"?"var(--setter)":k==="X"?"var(--rival)":"var(--player)",stroke:k==="S"?"var(--ink)":"var(--line)","stroke-width":2},svg);
-    const t=el("text",{x:X,y:Y+5,"text-anchor":"middle","font-size":13,fill:(k==="S"||k==="C")?"#1d2733":"#ffffff"},svg);t.textContent=p.l||k;
-    if(p.n)lab(svg,X+(p.nx||0),Y+(p.ny??28),p.n)});
-  (s.notes||[]).forEach(n=>lab(svg,px(n.x),py(n.y),n.t,n.a));
-  R.seq=s.seq; anim(R);
+    else el("circle",{cx:X,cy:Y,r:13,fill:k==="S"?"var(--setter)":k==="X"?"var(--rival)":k==="L"?"var(--libero)":"var(--player)",stroke:k==="S"?"var(--ink)":"var(--line)","stroke-width":2},svg);
+    const t=el("text",{x:X,y:Y+(lb.length>1?4.5:5),"text-anchor":"middle","font-size":lb.length>1?11.5:13,fill:(k==="S"||k==="C")?"#1d2733":"#ffffff"},svg);t.textContent=lb;
+    if(p.n&&!thumb)lab(svg,X+(p.nx||0),Y+(p.ny??28),p.n)});
+  if(!thumb)(s.notes||[]).forEach(n=>lab(svg,px(n.x),py(n.y),n.t,n.a));
+  R.seq=s.seq;return R;
 }
-function lab(svg,x,y,t,a){const e=el("text",{x,y,"text-anchor":a||"middle","font-size":11.5,fill:"var(--line)",stroke:"var(--ink)","stroke-width":3,"stroke-opacity":.55,"paint-order":"stroke"},svg);e.textContent=t}
+let RUN=0;
+function anim(R){
+  if(RM||!R.seq)return;
+  const svg=R.svg,all=[...R.b,...R.m];
+  const ball=el("g",{opacity:0},svg);
+  el("circle",{r:7.5,fill:"#ffffff",stroke:"#1d2733","stroke-width":2},ball);
+  el("path",{d:"M-7 0Q0 -4 7 0M-3.5 -6.5Q-1 0 -3.5 6.5M3.5 -6.5Q1 0 3.5 6.5",fill:"none",stroke:"#1d2733","stroke-width":1.2},ball);
+  const movers=R.m.map(()=>el("circle",{r:12,fill:"rgba(255,255,255,.35)",stroke:"#ffffff","stroke-width":3,opacity:0},svg));
+  const pe0=items=>items.every(([pe])=>pe.isConnected);
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  const tween=(items,dur)=>new Promise(res=>{const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    if(!pe0(items))return res();items.forEach(([pe,n])=>{const p=pe.getPointAtLength(pe.getTotalLength()*e);n.setAttribute("transform",`translate(${p.x} ${p.y})`)});k<1?requestAnimationFrame(f):res()})(t0)});
+  async function play(){const my=++RUN;
+    while(my===RUN&&document.body.contains(svg)){
+      for(const step of R.seq){if(my!==RUN)break;
+        const items=step.map(c=>{const i=+c.slice(1);return c[0]==="b"?[R.b[i],ball]:[R.m[i],movers[i]]});
+        all.forEach(e=>e.style.opacity=.3);items.forEach(([pe,n])=>{pe.style.opacity=1;n.setAttribute("opacity",1)});
+        ball.setAttribute("opacity",items.some(([,n])=>n===ball)?1:0);
+        if(!document.body.contains(svg))return;
+        await tween(items,items.some(([,n])=>n===ball)?1000:800);await wait(200);movers.forEach(m=>m.setAttribute("opacity",0))}
+      ball.setAttribute("opacity",0);all.forEach(e=>e.style.opacity="");await wait(1400)}
+  }
+  svg.addEventListener("click",play);play();
+}
 
-draw("d-set",{seq:[["m0"],["b0"],["b1"],["b0"],["b2"],["b0"],["b3"],["b0"],["b4"]],
-  ghost:[[7.6,7.4]],
-  hoops:[{x:1,y:0.8,l:"4 · high"},{x:4.7,y:0.8,l:"3 · quick",dx:-8},{x:8.2,y:0.8,l:"2 · back"},{x:4.4,y:3.9,l:"pipe",dy:30}],
-  moves:[[7.6,7.4,6.3,1.3]],
-  balls:[[4.5,7.6,6,1.2,0.12],[6.1,0.9,1.3,0.8,-0.3],[6.1,0.9,4.9,0.8,-0.5],[6.1,0.9,8.0,0.8,0.5],[6.1,0.9,4.6,3.6,-0.2]],
-  people:[{x:6.1,y:0.9,k:"S"},{x:4.5,y:7.8,k:"C",n:"slap, pass, call zone",ny:30}],
-  notes:[{x:7.9,y:5.2,t:"release",a:"start"}]
-});
-// Passing: server on far side, three passers, target
-draw("d-pass",{seq:[["b0","m0"],["b1"]],top:2.2,
-  hoops:[{x:6,y:0.9,l:"target",dy:-20}],
-  balls:[[3,-1.6,1.6,6.2,0.12],[1.6,6.2,5.8,1.1,-0.2]],
-  moves:[[1.3,7.2,1.6,6.4]],
-  people:[{x:3,y:-1.6,k:"C",n:"server",nx:34,ny:4},{x:1.3,y:7.3,n:"pos 5"},{x:4.5,y:7.6,n:"pos 6"},{x:7.6,y:7.3,n:"pos 1"},{x:6.9,y:1.4,k:"S"}],
-});
-// Pipe: setter at target, middle quick decoy, pipe from 6
-draw("d-pipe",{seq:[["b0"],["m1","m0"],["b1"]],
-  hoops:[{x:4.5,y:3.6,l:"pipe contact",dy:5,dx:-62}],
-  moves:[[4.6,7.4,4.5,4.0],[3.2,2.3,4.9,1.1]],
-  balls:[[2,8.2,5.9,1.0,0.12],[6,0.9,4.6,3.4,-0.25]],
-  people:[{x:6,y:0.9,k:"S"},{x:3.2,y:2.3,l:"M",n:"quick decoy",nx:-52,ny:5},{x:4.6,y:7.6,n:"pos 6, ~7 m",ny:30},{x:2,y:8.3,k:"C",n:"toss"}],
-  notes:[{x:4.9,y:5.6,t:"take off behind line",a:"start"}]
-});
-// Out of system: coach hits at setter, setter digs, RF sets high to 4
-draw("d-oos",{seq:[["b0"],["b1","m0"],["b2","m1"]],top:2.2,
-  moves:[[7.8,1.3,5.6,4.0],[0.8,4.1,1.1,1.7]],
-  balls:[[6.5,-1.4,7.4,7.0,0.1],[7.4,7.0,5.4,4.2,-0.3],[5.4,4.2,1.3,1.4,0.25]],
-  people:[{x:6.5,y:-1.5,k:"C",n:"coach on box",nx:-50,ny:4},{x:7.5,y:7.2,k:"S",n:"digs, calls Help!",ny:30},{x:7.8,y:1.3,l:"R",n:"right front",nx:-2,ny:-18},{x:0.8,y:4.3,l:"H",n:"pos 4",ny:28},{x:1.6,y:7.3,l:"D"},{x:4.5,y:7.6,l:"D"}],
-  notes:[{x:4.0,y:5.0,t:"high ball to 4",a:"middle"}]
-});
-// Free ball: front row drops, setter releases, pass to target
-draw("d-free",{seq:[["b0","m0","m1","m2","m3"],["b1"]],top:2.2,
-  zones:[{x:0.3,y:2.9,w:8.4,h:1.1,l:""}],
-  moves:[[1.2,0.9,1.2,3.0],[4.5,0.9,4.5,3.0],[7.8,0.9,7.8,3.0],[7.6,7.4,6.2,1.3]],
-  balls:[[3,-1.5,3.8,6.4,0.15],[3.8,6.4,5.9,1.0,-0.2]],
-  ghost:[[1.2,0.7],[4.5,0.7],[7.8,0.7]],
-  people:[{x:3,y:-1.5,k:"C",n:"easy ball over",nx:56,ny:4},{x:1.2,y:3.4,l:"L"},{x:4.5,y:3.4,l:"M"},{x:7.8,y:3.4,l:"R"},{x:7.6,y:7.4,k:"S",n:"release",ny:28},{x:3.8,y:6.6,n:"calls Free!",nx:-6,ny:30},{x:1.5,y:7.4,l:"D"}],
-  notes:[{x:2.9,y:2.55,t:"drop to the 3 m line"}]
-});
-// Hitting: approach from 4, set, targets line and cross
-draw("d-hit",{seq:[["b0"],["b1","m0"],["b2"],["b0"],["b1","m0"],["b3"]],top:4.2,
-  zones:[{x:0.2,y:-4.0,w:1.8,h:2.6,l:"LINE"},{x:5.6,y:-2.3,w:3.2,h:1.9,l:"CROSS"}],
-  moves:[[-0.2,4.6,1.0,1.3]],
-  balls:[[4.5,7.8,5.9,1.1,0.12],[6,1.0,1.2,0.8,-0.3],[1.1,0.8,1.1,-2.6,0,0.9],[1.1,0.8,6.3,-0.9,-0.1,0.9]],
-  people:[{x:6,y:1.0,k:"S"},{x:-0.2,y:4.8,l:"H",n:"hitter line",nx:36,ny:4},{x:-0.2,y:5.7,l:"H"},{x:4.5,y:7.9,k:"C",n:"toss + call",ny:30}],
-  notes:[{x:1.6,y:2.9,t:"L–R–L",a:"start"}]
-});
-// Blocking: coach on box far side, R sets edge, M closes
-draw("d-block",{seq:[["m0"],["b0"]],top:3.2,
-  moves:[[4.5,0.9,6.9,0.6]],
-  balls:[[7.6,-1.6,7.3,0.1,0.05]],
-  people:[{x:7.6,y:-1.7,k:"C",n:"coach on box",nx:-50,ny:4},{x:1.4,y:-1.7,k:"C",n:"or here",nx:42,ny:4},{x:7.8,y:0.6,l:"R",n:"sets the edge",nx:-8,ny:30},{x:4.5,y:0.9,l:"M",n:"step–cross–step",ny:30},{x:1.3,y:0.9,l:"L"},{x:7.0,y:5.2,l:"D"},{x:4.5,y:6.8,l:"D"},{x:2.0,y:5.2,l:"D"}],
-  notes:[{x:6.4,y:2.6,t:"close the seam",a:"middle"}]
-});
-// Communication: seam serve between two passers
-draw("d-comm",{seq:[["b0","m0"],["b1"]],top:2.2,
-  zones:[{x:3.4,y:5.0,w:2.2,h:3.2,l:"SEAM"}],
-  hoops:[{x:6,y:0.9,l:"target",dy:-20}],
-  balls:[[4.5,-1.5,4.6,6.4,0.02],[4.6,6.5,5.8,1.1,-0.15]],
-  moves:[[5.8,7.4,4.9,6.6]],
-  people:[{x:4.5,y:-1.6,k:"C",n:"serves the seam",nx:66,ny:4},{x:2.7,y:6.4,n:"“You!”",ny:30},{x:6.0,y:7.5,n:"“Mine!”",ny:30},{x:6.9,y:1.4,k:"S"}],
-});
+const app=document.getElementById("app");let filter="Setting",players=0;
+const legend=`<div class="legend" aria-label="Diagram key">
+<span><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="var(--setter)" stroke="var(--ink)" stroke-width="1.5"/></svg>Setter</span>
+<span><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="var(--libero)" stroke="var(--line)" stroke-width="1.5"/></svg>Libero (Li)</span>
+<span><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="var(--player)" stroke="var(--line)" stroke-width="1.5"/></svg>Players: OH outside, MB middle, OP opposite, D defender</span>
+<span><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="var(--rival)" stroke="var(--line)" stroke-width="1.5"/></svg>Other side</span>
+<span><svg width="20" height="20"><rect x="1" y="1" width="18" height="18" rx="4" fill="var(--coach)" stroke="var(--ink)" stroke-width="1.5"/></svg>Coach</span>
+<span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" stroke="var(--fg)" stroke-width="2.5" stroke-dasharray="5 4"/></svg>Ball</span>
+<span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" stroke="var(--fg)" stroke-width="2.5"/></svg>Movement</span></div>`;
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function index(){
+  RUN++;
+  const list=D.filter(d=>d.t===filter&&d.min<=(players||99));
+  app.innerHTML=`<div class="filters" role="group" aria-label="Filter by topic">${TOPICS.map(t=>`<button type="button" aria-pressed="${t===filter}">${t}</button>`).join("")}</div>
+  <div class="filters" role="group" aria-label="Players available"><span class="plab">Players today</span>${SIZES.map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===players}">${n?(n===12?"12+":n):"Any"}</button>`).join("")}</div>
+  <div class="count">${list.length} drill${list.length===1?"":"s"}${players?` you can run with ${players===12?"12 or more":players} players`:""}</div>
+  <div class="grid">${list.map(d=>`<a class="card" href="#${d.id}"><div class="thumb"><svg data-id="${d.id}" aria-hidden="true"></svg></div>
+    <div class="cbody"><span class="tag">${d.t}</span><h2>${esc(d.title)}</h2><p>${esc(d.aim)}</p><div class="foot">${d.time} · ${d.min}+ players</div></div></a>`).join("")}</div>
+  <footer>Compiled by Monika Krzak for the Cambridge Volleyball Club county teams. More training materials on <a href="https://mkrzak.github.io/VolleySource/">VolleySource</a>.</footer>`;
+  app.querySelectorAll(".filters button").forEach(b=>b.onclick=()=>{if(b.dataset.n!==undefined)players=+b.dataset.n;else filter=b.textContent;index()});
+  app.querySelectorAll(".thumb svg").forEach(s=>draw(s,D.find(d=>d.id===s.dataset.id).s,true));
+}
+function detail(d){
+  filter=d.t;
+  const i=D.indexOf(d),prev=D[(i-1+D.length)%D.length],next=D[(i+1)%D.length];
+  app.innerHTML=`<a class="back" href="#">← All drills</a>
+  <article class="detail"><div><svg class="court" role="img" aria-label="${esc(d.title)} diagram"></svg><div class="hint">Tap the court to replay</div></div>
+  <div><div class="meta">${d.t} · ${d.time} · ${esc(d.who)}</div><h2>${esc(d.title)}</h2><p class="aim">${esc(d.aim)}</p>
+  <ol>${d.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+  ${d.rule?`<p class="rule"><b>Rule</b>${esc(d.rule)}</p>`:""}
+  <p class="line"><b>Score</b> ${esc(d.score)}</p>
+  <ul class="chips">${d.cues.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>
+  <p class="line next"><b>Next</b> ${esc(d.next)}</p>
+  <div class="players"><b>Players</b> needs ${d.min}+<p><span>Fewer</span> ${esc(d.few)}</p><p><span>More</span> ${esc(d.more)}</p></div></div></article>
+  ${legend}
+  <nav class="pager" aria-label="More drills"><a href="#${prev.id}">← ${esc(prev.title)}</a><a href="#${next.id}">${esc(next.title)} →</a></nav>`;
+  anim(draw(app.querySelector("svg.court"),d.s,false));
+}
+function route(){const h=location.hash.slice(1),d=D.find(x=>x.id===h);d?detail(d):index();window.scrollTo(0,0)}
+addEventListener("hashchange",route);route();
 </script>
 
 </body>

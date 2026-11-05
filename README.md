@@ -4,7 +4,7 @@ Animated volleyball drills for the County League teams at Cambridge Volleyball C
 
 **Live site:** https://mkrzak.github.io/VolleyDrills/
 
-One self-contained page (`index.html`) with eight animated drill cards: setting, hitting, blocking, passing, out of system, free ball, communication and pipe. Each card has a court diagram that plays through the drill, the aim, how it runs, scoring, coaching cues and a progression.
+One self-contained page (`index.html`): a library of 17 drill cards across setting, hitting, blocking, passing, out of system, free ball, communication, pipe, serving and defence. The front page shows the cards with a topic filter; each card opens its own drill page (`index.html#drill-id`) with an animated court diagram, the steps, any relevant rule (e.g. libero setting), scoring, coaching cues and a progression.
 
 The previous drills (Grow the Team, Defence Drill, Block Cover Drill) are kept in `old-drills.html`, which is not linked from the site.
 
