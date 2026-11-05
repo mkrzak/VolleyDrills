@@ -84,7 +84,6 @@ svg text{font-family:var(--body);font-weight:700}
 
 <div class="band"><div class="in">
   <h1><a href="#">Volleyball drill cards</a></h1>
-  <p>Drills for the county teams. Every court shows its drill in motion. Pick a card for the full drill.</p>
 </div></div>
 
 <main><div class="in" id="app"></div></main>
@@ -400,7 +399,7 @@ function index(){
   <div class="count">${list.length} drill${list.length===1?"":"s"}${players?` you can run with ${players===12?"12 or more":players} players`:""}</div>
   <div class="grid">${list.map(d=>`<a class="card" href="#${d.id}"><div class="thumb"><svg data-id="${d.id}" aria-hidden="true"></svg></div>
     <div class="cbody"><span class="tag">${d.t} <span class="lv lv${d.lv}">${LVN[d.lv]}</span></span><h2>${esc(d.title)}</h2><p>${esc(d.aim)}</p><div class="foot">${d.time} · ${d.min}+ players</div></div></a>`).join("")}</div>
-  <footer>Compiled by Monika Krzak for the Cambridge Volleyball Club county teams. More training materials on <a href="https://mkrzak.github.io/VolleySource/">VolleySource</a>.</footer>`;
+  <footer>© 2026 Monika Krzak, Cambridge Volleyball Club. All rights reserved.</footer>`;
   app.querySelectorAll(".filters button").forEach(b=>b.onclick=()=>{if(b.dataset.n!==undefined)players=+b.dataset.n;else if(b.dataset.l!==undefined)level=+b.dataset.l;else filter=b.textContent;index()});
   app.querySelectorAll(".thumb svg").forEach((s,i)=>{const R=draw(s,D.find(d=>d.id===s.dataset.id).s,true);setTimeout(()=>anim(R),i*350)});
 }
@@ -426,6 +425,7 @@ addEventListener("DOMContentLoaded",()=>{D.sort((a,b)=>TOPICS.indexOf(a.t)-TOPIC
 </script>
 <script src="more.js"></script>
 <script src="more2.js"></script>
+<script src="more3.js"></script>
 
 </body>
 </html>
